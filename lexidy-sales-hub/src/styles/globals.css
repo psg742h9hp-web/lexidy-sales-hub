@@ -1,0 +1,107 @@
+/* ═══════════════════════════════════════════════
+   DESIGN SYSTEM — LEXIDY SALES HUB
+   ═══════════════════════════════════════════════ */
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap');
+
+:root {
+  --purple:       #2c1c4f;
+  --purple-mid:   #3d2e6e;
+  --purple-light: rgba(44,28,79,0.06);
+  --orange:       #e07856;
+  --orange-hover: #d06a48;
+  --orange-light: #f5e8e0;
+  --cream:        #f6f2eb;
+  --cream-mid:    #ede8df;
+  --white:        #ffffff;
+  --text-muted:   #7a6f88;
+  --border:       #e4dfd6;
+  --green:        #3d9e6e;
+  --green-light:  rgba(61,158,110,0.12);
+  --red:          #c94343;
+  --red-light:    rgba(201,67,67,0.10);
+
+  --shadow-sm:  0 2px 8px rgba(44,28,79,0.07);
+  --shadow-md:  0 8px 28px rgba(44,28,79,0.11);
+  --shadow-lg:  0 20px 60px rgba(44,28,79,0.16);
+
+  --radius:    16px;
+  --radius-sm: 10px;
+  --radius-xs: 6px;
+
+  --topbar-h: 60px;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--cream);
+  color: var(--purple);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--cream); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* ── PAGE ANIMATION ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.page-enter {
+  animation: fadeUp 0.3s cubic-bezier(0.22,1,0.36,1) both;
+}
+
+/* ── LAYOUT WRAPPERS ── */
+.wrap-sm  { max-width: 760px;  margin: 0 auto; padding: 56px 32px 80px; }
+.wrap-md  { max-width: 960px;  margin: 0 auto; padding: 56px 32px 80px; }
+.wrap-lg  { max-width: 1120px; margin: 0 auto; padding: 48px 32px 80px; }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 1024px) {
+  .pricing-layout { grid-template-columns: 1fr !important; }
+  .cart-sidebar { position: static !important; }
+}
+
+@media (max-width: 768px) {
+  .topbar { padding: 0 16px !important; }
+  .topbar-center { display: none !important; }
+  .wrap-sm, .wrap-md, .wrap-lg {
+    padding-left: 16px !important;
+    padding-right: 16px !important;
+    padding-top: 40px !important;
+  }
+  .quads { grid-template-columns: 1fr !important; }
+  .packages-grid { grid-template-columns: 1fr !important; }
+  .plat-body { grid-template-columns: 1fr !important; }
+}
+
+/* ── ELIG SELECT DROPDOWN ── */
+.elig-select {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  color: var(--purple);
+  background: white;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237a6f88' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 36px;
+}
+
+.elig-select:focus { border-color: var(--orange); }
