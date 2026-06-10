@@ -33,11 +33,11 @@ const SCENARIOS = {
     { employment_type: 'Employee (foreign company)', family_count: '0' },
     { employment_type: 'Self-Employed / Freelancer', family_count: '4' },
   ],
-  'pt-d7': [
+  'pt-d7-family': [
     {},
     { family_count: '2' },
   ],
-  'gr-fip': [
+  'gr-fip-family': [
     {},
     { has_spouse: 'Yes', child_count: '2', income_type: GR_PASSIVE },
     { has_spouse: 'No', child_count: '0', income_type: 'Savings / bank deposits' },
@@ -72,7 +72,7 @@ function norm(q) {
 let pass = 0, fail = 0
 for (const [visaId, scenarios] of Object.entries(SCENARIOS)) {
   for (const ans of scenarios) {
-    const expected = ELIG_DEFS[visaId](ans).map(norm)
+    const expected = ELIG_DEFS[visaId === 'pt-d7-family' ? 'pt-d7' : visaId === 'gr-fip-family' ? 'gr-fip' : visaId](ans).map(norm)
     const actual = buildQuestions(ELIGIBILITY_DEFS[visaId], ans).map(norm)
     const e = JSON.stringify(expected)
     const a = JSON.stringify(actual)

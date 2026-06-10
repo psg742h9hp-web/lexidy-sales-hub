@@ -279,7 +279,10 @@ const franceVisitor = [
 ]
 
 // ── VISA ID → QUESTION SET MAP ────────────────────────────────
-// Mirrors ELIG_DEFS in the frontend's mockData.js.
+// NOTE: This map FIXES three dead aliases that exist in the
+// frontend's ELIG_DEFS ('pt-d7', 'gr-fip', 'fr-visitor-platinum'
+// don't exist in COUNTRIES) and ADDS the platinum variants that
+// were missing eligibility tests entirely.
 
 export const ELIGIBILITY_DEFS = {
   'es-dnv-freelancer': spainDNV,
@@ -287,11 +290,11 @@ export const ELIGIBILITY_DEFS = {
   'es-nlv': spainNLV,
   'pt-dnv': portugalDNV,
   'pt-dnv-family': portugalDNV,
-  'pt-d7': portugalD7,
+  'pt-dnv-platinum-employee': portugalDNV,
   'pt-d7-family': portugalD7,
-  'gr-fip': greeceFIP,
+  'pt-d7-platinum-no-relocation': portugalD7,
+  'pt-d7-platinum-relocation': portugalD7,
   'gr-fip-family': greeceFIP,
   'fr-visitor': franceVisitor,
   'fr-visitor-family': franceVisitor,
-  'fr-visitor-platinum': franceVisitor,
 }
