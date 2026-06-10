@@ -87,7 +87,11 @@ CREATE TABLE IF NOT EXISTS eligibility_questions (
   review_msg       VARCHAR(500),
   disqualify_below BOOLEAN DEFAULT FALSE,
   review_below     BOOLEAN DEFAULT FALSE,
-  show_if          JSONB,                     -- branching condition
+  show_if          JSONB,                     -- branching condition (see lib/eligibilityEngine.js)
+  threshold_rule   JSONB,                     -- computed threshold formula (familyTiered | perFamily | pctMultiplier | byAnswer)
+  disqualify_below_if JSONB,                  -- condition that activates disqualify_below dynamically
+  review_below_if  JSONB,                     -- condition that activates review_below dynamically
+  meta             JSONB,                     -- extra UI constraints, e.g. { "min": 0, "max": 15 }
   sort_order       INTEGER DEFAULT 0,
   updated_at       TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE (visa_id, question_id)
