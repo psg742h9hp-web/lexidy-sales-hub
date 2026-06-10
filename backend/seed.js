@@ -10,18 +10,18 @@
 // Idempotent — uses upserts, safe to re-run after editing
 // mockData.js. Existing rows are updated, not duplicated.
 //
-// NOTE ON ELIGIBILITY QUESTIONS:
-// In mockData.js, eligibility tests are FUNCTIONS with branching
-// logic (questions appear/disappear based on previous answers).
-// This script seeds the BASE question set (no answers given).
-// The eligibility route (routes/eligibility.js) keeps the full
-// branching logic in code and uses DB rows for editable content
-// (labels, thresholds, messages). See that file for details.
+// ELIGIBILITY QUESTIONS:
+// Seeded from data/eligibilityData.js — the DECLARATIVE conversion
+// of mockData.js's branching functions (verified 1:1 equivalent by
+// test-equivalence.js). Branching (show_if) and computed thresholds
+// (threshold_rule) live in the database, fully editable without
+// deploys. Grammar: see lib/eligibilityEngine.js.
 //
 // ══════════════════════════════════════════════════════════════
 
 import { pool, query } from './db.js'
-import { COUNTRIES, ELIG_DEFS } from '../lexidy-sales-hub/src/data/mockData.js'
+import { COUNTRIES } from '../lexidy-sales-hub/src/data/mockData.js'
+import { ELIGIBILITY_DEFS } from './data/eligibilityData.js'
 
 async function seedCountries() {
   let count = 0
@@ -112,23 +112,15 @@ async function seedAddons() {
 
 async function seedEligibilityQuestions() {
   let count = 0
-  for (const [visaId, def] of Object.entries(ELIG_DEFS)) {
-    // Base question set: call the definition with no answers.
-    // Branching follow-ups stay in code (see routes/eligibility.js).
-    let questions
-    try {
-      questions = def({}) || []
-    } catch (e) {
-      console.warn(`  ⚠️  skipped ${visaId}: ${e.message}`)
-      continue
-    }
-    for (const [i, q] of questions.entries()) {
+  for (const [visaId, defs] of Object.entries(ELIGIBILITY_DEFS)) {
+    for (const [i, q] of defs.entries()) {
       await query(
         `INSERT INTO eligibility_questions
            (visa_id, question_id, label, type, required, options, hint, threshold,
             disqualify_if, disqualify_msg, review_if, review_msg,
-            disqualify_below, review_below, sort_order)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+            disqualify_below, review_below, show_if, threshold_rule,
+            disqualify_below_if, review_below_if, meta, sort_order)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
          ON CONFLICT (visa_id, question_id) DO UPDATE SET
            label = EXCLUDED.label, type = EXCLUDED.type,
            required = EXCLUDED.required, options = EXCLUDED.options,
@@ -136,13 +128,22 @@ async function seedEligibilityQuestions() {
            disqualify_if = EXCLUDED.disqualify_if, disqualify_msg = EXCLUDED.disqualify_msg,
            review_if = EXCLUDED.review_if, review_msg = EXCLUDED.review_msg,
            disqualify_below = EXCLUDED.disqualify_below, review_below = EXCLUDED.review_below,
+           show_if = EXCLUDED.show_if, threshold_rule = EXCLUDED.threshold_rule,
+           disqualify_below_if = EXCLUDED.disqualify_below_if,
+           review_below_if = EXCLUDED.review_below_if,
+           meta = EXCLUDED.meta,
            sort_order = EXCLUDED.sort_order, updated_at = NOW()`,
-        [visaId, q.id, q.label, q.type, q.required !== false,
+        [visaId, q.id, q.label, q.type, q.required === true,
          q.options ? JSON.stringify(q.options) : null,
          q.hint || null, q.threshold ?? null,
          q.disqualifyIf || null, q.disqualifyMsg || null,
          q.reviewIf || null, q.reviewMsg || null,
-         q.disqualifyBelow === true, q.reviewBelow === true, i]
+         q.disqualifyBelow === true, q.reviewBelow === true,
+         q.showIf ? JSON.stringify(q.showIf) : null,
+         q.thresholdRule ? JSON.stringify(q.thresholdRule) : null,
+         q.disqualifyBelowIf ? JSON.stringify(q.disqualifyBelowIf) : null,
+         q.reviewBelowIf ? JSON.stringify(q.reviewBelowIf) : null,
+         q.meta ? JSON.stringify(q.meta) : null, i]
       )
       count++
     }
