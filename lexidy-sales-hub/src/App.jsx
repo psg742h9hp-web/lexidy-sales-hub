@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useAppState, PAGES } from './hooks/useAppState.js'
 import { fetchContact } from './services/dataService.js'
 import Topbar from './components/Topbar.jsx'
+import LoginGate from './components/LoginGate.jsx'
 import HubPage from './pages/HubPage.jsx'
 import EligibilityPage from './pages/EligibilityPage.jsx'
 import ResultsPage from './pages/ResultsPage.jsx'
@@ -36,6 +37,7 @@ export default function App() {
   const pageProps = { ...appState }
 
   return (
+    <LoginGate>
     <div style={{ minHeight: '100vh', background: 'var(--cream)' }}>
       <Topbar
         state={state}
@@ -52,5 +54,6 @@ export default function App() {
         {state.currentPage === PAGES.ADMIN         && <AdminPage        {...pageProps} />}
       </div>
     </div>
+    </LoginGate>
   )
 }
