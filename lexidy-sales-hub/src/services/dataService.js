@@ -3,17 +3,21 @@
 // ══════════════════════════════════════════════════════════════
 //
 // This is the ONLY file that talks to the outside world.
-// Right now it returns mock data from mockData.js.
 //
-// When Kevin's backend is ready, replace each mock function
-// with a real fetch() call to his API endpoints.
+// TWO MODES (switched by VITE_API_BASE_URL):
 //
-// SEARCH FOR: "// → REPLACE WITH KEVIN'S API"
-// Each one shows the exact endpoint and request shape Kevin needs.
+//   LIVE MODE  — VITE_API_BASE_URL is set:
+//     All functions call the backend in /backend of this repo
+//     (Postgres catalog, DB-driven eligibility, HubSpot notes).
+//
+//   MOCK MODE  — VITE_API_BASE_URL is unset:
+//     Original demo behavior: mockData.js + localStorage.
+//     Used for local development and stakeholder demos.
 //
 // ══════════════════════════════════════════════════════════════
 
-import { COUNTRIES, ELIG_DEFS } from './mockData.js'
+import { COUNTRIES, ELIG_DEFS } from '../data/mockData.js'
+import { api, isApiMode } from './apiClient.js'
 
 const STORAGE_KEY = 'lexidy_admin_data_v1'
 
@@ -21,14 +25,15 @@ const STORAGE_KEY = 'lexidy_admin_data_v1'
 
 /**
  * Fetch all countries and their visas.
- * Used to build the hub landing page.
- *
- * → REPLACE WITH KEVIN'S API:
- *   GET /api/countries
- *   Response: { countries: [...] }
+ * LIVE: GET /api/countries
  */
 export async function fetchCountries() {
-  // Load any admin overrides from localStorage
+  if (isApiMode()) {
+    const data = await api('/api/countries')
+    return data.countries
+  }
+
+  // MOCK: apply admin overrides from localStorage
   const overrides = _loadAdminOverrides()
   if (overrides?.countries) {
     overrides.countries.forEach(savedCountry => {
@@ -46,12 +51,17 @@ export async function fetchCountries() {
 
 /**
  * Fetch a single visa's full data (packages, features, addons, notes).
- *
- * → REPLACE WITH KEVIN'S API:
- *   GET /api/visas/:visaId
- *   Response: { visa: { id, label, packages, features, addons, notes, timeline } }
+ * LIVE: GET /api/visas/:visaId
  */
 export async function fetchVisa(visaId) {
+  if (isApiMode()) {
+    try {
+      return await api(`/api/visas/${encodeURIComponent(visaId)}`)
+    } catch {
+      return null
+    }
+  }
+
   const countries = await fetchCountries()
   for (const country of countries) {
     const visa = country.visas.find(v => v.id === visaId)
@@ -65,37 +75,22 @@ export async function fetchVisa(visaId) {
 /**
  * Fetch eligibility questions for a visa.
  * Passes current answers so branching logic can show/hide questions.
- *
- * → REPLACE WITH KEVIN'S API:
- *   POST /api/eligibility-questions/:visaId
- *   Body: { answers: { questionId: value, ... } }
- *   Response: { questions: [...] }
- *
- *   Question shape:
- *   {
- *     id: string,
- *     label: string,
- *     type: 'text' | 'number' | 'currency' | 'yesno' | 'select' | 'info',
- *     required: boolean,
- *     options?: string[],        // for type: 'select'
- *     hint?: string,
- *     threshold?: number,        // for type: 'currency'
- *     disqualifyIf?: string,     // 'Yes' | 'No'
- *     disqualifyMsg?: string,
- *     reviewIf?: string,         // 'Yes' | 'No'
- *     reviewMsg?: string,
- *     disqualifyBelow?: boolean, // for currency threshold
- *     reviewBelow?: boolean,
- *   }
+ * LIVE: POST /api/eligibility-questions/:visaId  { answers }
  */
 export async function fetchEligibilityQuestions(visaId, answers = {}) {
-  // Check for admin overrides first (from Admin Panel edits)
+  if (isApiMode()) {
+    const data = await api(`/api/eligibility-questions/${encodeURIComponent(visaId)}`, {
+      method: 'POST',
+      body: JSON.stringify({ answers }),
+    })
+    return data.questions
+  }
+
+  // MOCK: admin overrides, then built-in functions
   const overrides = _loadAdminOverrides()
   if (overrides?.eligOverrides?.[visaId]) {
     return overrides.eligOverrides[visaId]
   }
-
-  // Fall back to built-in eligibility functions
   const def = ELIG_DEFS[visaId]
   if (!def) return []
   return def(answers)
@@ -105,26 +100,17 @@ export async function fetchEligibilityQuestions(visaId, answers = {}) {
 
 /**
  * Submit eligibility test results.
- * In production, this sends to HubSpot via Kevin's backend.
- *
- * → REPLACE WITH KEVIN'S API:
- *   POST /api/sessions/eligibility
- *   Body: {
- *     contactId: string,
- *     visaId: string,
- *     visaLabel: string,
- *     country: string,
- *     result: 'pass' | 'review' | 'fail',
- *     answers: [{ question, answer, stepId }],
- *     timestamp: ISO string
- *   }
- *   Response: { success: true, sessionId: string }
- *
- *   Kevin should then create a HubSpot note/engagement on the contact record.
+ * LIVE: POST /api/sessions/eligibility → Postgres + HubSpot note
  */
 export async function submitEligibilityResult(payload) {
+  if (isApiMode()) {
+    return api('/api/sessions/eligibility', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  }
+
   console.log('📤 [MOCK] Eligibility result — would send to HubSpot:', payload)
-  // Simulate async
   await _delay(200)
   return { success: true, sessionId: 'mock_' + Date.now() }
 }
@@ -133,28 +119,16 @@ export async function submitEligibilityResult(payload) {
 
 /**
  * Submit pricing/package decision.
- * In production, this records the lead's interest in HubSpot.
- *
- * → REPLACE WITH KEVIN'S API:
- *   POST /api/sessions/pricing
- *   Body: {
- *     contactId: string,
- *     visaId: string,
- *     visaLabel: string,
- *     country: string,
- *     package: string,
- *     packagePrice: number,
- *     familyMembers: number,
- *     children: number,
- *     addons: [{ id, name, price }],
- *     totalEstimate: number,
- *     timestamp: ISO string
- *   }
- *   Response: { success: true, sessionId: string }
- *
- *   Kevin should then update the HubSpot contact record with deal interest.
+ * LIVE: POST /api/sessions/pricing → Postgres + HubSpot note
  */
 export async function submitPricingDecision(payload) {
+  if (isApiMode()) {
+    return api('/api/sessions/pricing', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  }
+
   console.log('📤 [MOCK] Pricing decision — would send to HubSpot:', payload)
   await _delay(200)
   return { success: true, sessionId: 'mock_' + Date.now() }
@@ -164,16 +138,8 @@ export async function submitPricingDecision(payload) {
 
 /**
  * Fetch contact info from HubSpot by contactId.
- * In production, Kevin's backend proxies the HubSpot API call
- * (avoids exposing the API key in the browser).
- *
- * → REPLACE WITH KEVIN'S API:
- *   GET /api/contacts/:contactId
- *   Response: { contact: { id, firstName, lastName, email } }
- *
- *   Kevin's backend calls:
- *   GET https://api.hubapi.com/crm/v3/objects/contacts/:contactId
- *   with Authorization: Bearer {HUBSPOT_API_KEY}
+ * LIVE: GET /api/contacts/:contactId (backend proxies HubSpot —
+ * the API key never reaches the browser).
  */
 export async function fetchContact(contactId) {
   if (!contactId || contactId === 'TEST_CONTACT') {
@@ -184,25 +150,38 @@ export async function fetchContact(contactId) {
       email: 'test@example.com',
     }
   }
+
+  if (isApiMode()) {
+    try {
+      const data = await api(`/api/contacts/${encodeURIComponent(contactId)}`)
+      return data.contact
+    } catch {
+      return null
+    }
+  }
+
   console.log('📥 [MOCK] Would fetch contact from HubSpot:', contactId)
   return null
 }
 
-// ── ADMIN: SAVE DATA ──────────────────────────────────────────
+// ── ADMIN: SAVE / LOAD ────────────────────────────────────────
 
 /**
  * Save admin panel changes.
- * Currently persists to localStorage.
- *
- * → REPLACE WITH KEVIN'S API:
- *   POST /api/admin/save
- *   Body: { countries: [...], eligOverrides: {...} }
- *   Response: { success: true }
- *
- *   Kevin stores this in his database.
- *   All advisors will see changes on next page load.
+ * LIVE: POST /api/admin/save → Postgres (all advisors see changes)
  */
 export async function saveAdminData(data) {
+  if (isApiMode()) {
+    try {
+      return await api('/api/admin/save', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      })
+    } catch (e) {
+      return { success: false, error: e.message }
+    }
+  }
+
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
     return { success: true }
@@ -214,6 +193,8 @@ export async function saveAdminData(data) {
 
 /**
  * Reset all admin changes back to defaults.
+ * LIVE: re-runs `npm run seed` on the server — out of scope for the
+ * UI, so this only clears local overrides in mock mode.
  */
 export async function resetAdminData() {
   localStorage.removeItem(STORAGE_KEY)
