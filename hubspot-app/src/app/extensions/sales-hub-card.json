@@ -1,0 +1,14 @@
+{
+  "type": "crm-card",
+  "data": {
+    "title": "Sales Hub",
+    "uid": "lexidy-sales-hub-card",
+    "location": "crm.record.tab",
+    "module": {
+      "file": "SalesHubCard.jsx"
+    },
+    "objectTypes": [
+      { "name": "contacts" }
+    ]
+  }
+}

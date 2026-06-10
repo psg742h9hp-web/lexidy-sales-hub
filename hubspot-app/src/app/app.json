@@ -1,0 +1,17 @@
+{
+  "name": "Lexidy Sales Hub",
+  "description": "Embeds the Sales Hub advisor tool in contact records",
+  "uid": "lexidy-sales-hub-app",
+  "scopes": [
+    "crm.objects.contacts.read"
+  ],
+  "extensions": {
+    "crm": {
+      "cards": [
+        {
+          "file": "extensions/sales-hub-card.json"
+        }
+      ]
+    }
+  }
+}
