@@ -2,7 +2,7 @@
   "name": "lexidy-sales-hub",
   "version": "1.0.0",
   "private": true,
-  "description": "Lexidy Sales Hub — Advisor-facing internal tool embedded in HubSpot",
+  "description": "Lexidy Sales Hub \u2014 Advisor-facing internal tool embedded in HubSpot",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -19,5 +19,6 @@
     "eslint-plugin-react": "^7.34.1",
     "eslint-plugin-react-hooks": "^4.6.0",
     "vite": "^5.1.4"
-  }
+  },
+  "type": "module"
 }
