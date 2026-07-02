@@ -22,8 +22,12 @@ const { Pool } = pg
 
 export const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  // Lexidy servers: enable SSL in production if the DB requires it
-  ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
+  // Lexidy servers: enable SSL in production if the DB requires it.
+  // rejectUnauthorized stays true — set DB_SSL_INSECURE=true only for
+  // providers with self-signed certs you've already vetted.
+  ssl: process.env.DB_SSL === 'true'
+    ? { rejectUnauthorized: process.env.DB_SSL_INSECURE !== 'true' }
+    : false,
   max: 10,
   idleTimeoutMillis: 30000,
 })

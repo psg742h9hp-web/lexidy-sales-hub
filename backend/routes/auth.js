@@ -13,8 +13,32 @@
 
 import { Router } from 'express'
 import jwt from 'jsonwebtoken'
+import crypto from 'crypto'
 
 const router = Router()
+
+// ponytail: per-IP login attempt counter, resets on restart — swap for
+// a shared store (Redis) if the backend ever runs on more than one instance
+const attempts = new Map()
+const MAX_ATTEMPTS = 10
+const WINDOW_MS = 15 * 60 * 1000
+
+function tooManyAttempts(ip) {
+  const now = Date.now()
+  const entry = attempts.get(ip)
+  if (!entry || now - entry.start > WINDOW_MS) {
+    attempts.set(ip, { start: now, count: 1 })
+    return false
+  }
+  entry.count++
+  return entry.count > MAX_ATTEMPTS
+}
+
+function safeEqual(a, b) {
+  const bufA = Buffer.from(String(a))
+  const bufB = Buffer.from(String(b))
+  return bufA.length === bufB.length && crypto.timingSafeEqual(bufA, bufB)
+}
 
 // POST /api/auth/login   { password, advisorName? }
 router.post('/login', (req, res) => {
@@ -23,7 +47,10 @@ router.post('/login', (req, res) => {
   if (!process.env.ADVISOR_PASSWORD || !process.env.JWT_SECRET) {
     return res.status(500).json({ error: 'Auth not configured on server (.env missing)' })
   }
-  if (!password || password !== process.env.ADVISOR_PASSWORD) {
+  if (tooManyAttempts(req.ip)) {
+    return res.status(429).json({ error: 'Too many attempts — try again later' })
+  }
+  if (!password || !safeEqual(password, process.env.ADVISOR_PASSWORD)) {
     return res.status(401).json({ error: 'Invalid password' })
   }
 

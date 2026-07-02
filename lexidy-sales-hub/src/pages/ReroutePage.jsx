@@ -1,4 +1,5 @@
 import { PAGES } from '../hooks/useAppState.js'
+import { fetchVisa } from '../services/dataService.js'
 import { Button } from '../components/UI.jsx'
 
 // Rerouting suggestions — keyed by visaId
@@ -27,11 +28,12 @@ const REROUTE_SUGGESTIONS = {
 export default function ReroutePage({ state, setPage, setBreadcrumb, selectVisa }) {
   const suggestions = REROUTE_SUGGESTIONS[state.visaId] || []
 
-  function handleSelectAlternative(suggestion) {
-    // Find the country and visa from COUNTRIES — this will reload eligibility
-    // For now, navigate to hub so advisor can select manually
-    setBreadcrumb([])
-    setPage(PAGES.HUB)
+  async function handleSelectAlternative(suggestion) {
+    const data = await fetchVisa(suggestion.visaId)
+    if (!data) { setBreadcrumb([]); setPage(PAGES.HUB); return }
+    selectVisa(data.country, data.visa)
+    setBreadcrumb([data.country.name, data.visa.label, 'Eligibility Test'])
+    setPage(PAGES.ELIGIBILITY)
   }
 
   return (
